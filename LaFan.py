@@ -1,15 +1,18 @@
-import torch
-from torch.utils.data import Dataset, DataLoader
+import os
+import sys
 
-import sys, os
+import torch
+from torch.utils.data import Dataset
+
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.append("..")
 
 import numpy as np
-from lafan1 import extract, utils, benchmarks
+from lafan1 import extract, utils
+
 
 class LaFan1(Dataset):
-    def __init__(self, bvh_path, train = False, seq_len = 50, offset = 10, debug = False):
+    def __init__(self, bvh_path, train=False, seq_len=50, offset=10, debug=False):
         """
         Args:
             bvh_path (string): Path to the bvh files.
@@ -27,13 +30,11 @@ class LaFan1(Dataset):
         self.offset = offset
         self.data = self.load_data(bvh_path)
         self.cur_seq_length = 5
-        
 
     def load_data(self, bvh_path):
         # Get test-set for windows of 65 frames, offset by 40 frames
         print('Building the data set...')
-        X, Q, parents, contacts_l, contacts_r = extract.get_lafan1_set(\
-                                                bvh_path, self.actors, window=self.seq_len, offset=self.offset, debug = self.debug)
+        X, Q, parents, contacts_l, contacts_r = extract.get_lafan1_set(bvh_path, self.actors, window=self.seq_len, offset=self.offset)
         # Global representation:
         q_glbl, x_glbl = utils.quat_fk(Q, X, parents)
 
@@ -48,27 +49,27 @@ class LaFan1(Dataset):
         # The following features are inputs:
         # 1. local quaternion vector (J * 4d)
         input_['local_q'] = Q
-        
+
         # 2. global root velocity vector (3d)
-        input_['root_v'] = x_glbl[:,1:,0,:] - x_glbl[:,:-1,0,:]
+        input_['root_v'] = x_glbl[:, 1:, 0, :] - x_glbl[:, :-1, 0, :]
 
         # 3. contact information vector (4d)
         input_['contact'] = np.concatenate([contacts_l, contacts_r], -1)
-        
+
         # 4. global root position offset (?d)
-        input_['root_p_offset'] = x_glbl[:,-1,0,:]
+        input_['root_p_offset'] = x_glbl[:, -1, 0, :]
 
         # 5. local quaternion offset (?d)
-        input_['local_q_offset'] = Q[:,-1,:,:]
+        input_['local_q_offset'] = Q[:, -1, :, :]
 
         # 6. target 
-        input_['target'] = Q[:,-1,:,:]
+        input_['target'] = Q[:, -1, :, :]
 
         # 7. root pos
-        input_['root_p'] = x_glbl[:,:,0,:]
+        input_['root_p'] = x_glbl[:, :, 0, :]
 
         # 8. X
-        input_['X'] = x_glbl[:,:,:,:]
+        input_['X'] = x_glbl[:, :, :, :]
 
         print('Nb of sequences : {}\n'.format(X.shape[0]))
 
@@ -92,7 +93,7 @@ class LaFan1(Dataset):
         sample['target'] = self.data['target'][idx_].astype(np.float32)
         sample['root_p'] = self.data['root_p'][idx_].astype(np.float32)
         sample['X'] = self.data['X'][idx_].astype(np.float32)
-        
+
         # sample['local_q_aug'] = self.data['local_q'][idx_].astype(np.float32)
         # sample['root_v_aug'] = self.data['root_v'][idx_].astype(np.float32)
         # sample['contact_aug'] = self.data['contact'][idx_].astype(np.float32)
@@ -104,6 +105,7 @@ class LaFan1(Dataset):
         # sample['X'] = self.data['X'][idx_].astype(np.float32)
         return sample
 
-if __name__=="__main__":
-    lafan_data = LaFan1('D:\\ubisoft-laforge-animation-dataset\\lafan1\\lafan1')
+
+if __name__ == "__main__":
+    lafan_data = LaFan1('../ubisoft-laforge-animation-dataset/lafan1/lafan1')
     print(lafan_data.data_X.shape, lafan_data.data_Q.shape)
