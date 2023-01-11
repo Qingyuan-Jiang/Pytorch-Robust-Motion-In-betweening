@@ -127,6 +127,7 @@ if __name__ == '__main__':
             img_list = []
 
             # print(i_batch, sample_batched['local_q'].size())
+            print('batch: ', i_batch)
 
             loss_pos = 0
             loss_quat = 0

@@ -53,10 +53,10 @@ test:
     num_epoch: 1
     use_ztta: True
     use_adv: True
-    save_img: True
+    save_img: False
     save_gif: True
     save_pose: False
     save_bvh: False
     debug: False
     version: ''
-    model_dir: '../ubisoft-laforge-animation-dataset/model/'
+    model_dir: 'model/'
